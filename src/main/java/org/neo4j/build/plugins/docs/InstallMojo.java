@@ -45,6 +45,8 @@ import org.apache.maven.project.MavenProjectHelper;
  * uses the install plugin to install the file).
  * 
  * @goal install
+ * @requiresDirectInvocation
+ * @requiresDependencyResolution test
  */
 public class InstallMojo extends AbstractMojo
 {
@@ -54,6 +56,13 @@ public class InstallMojo extends AbstractMojo
      * @parameter
      */
     private List<String> sourceDirectories;
+
+    /**
+     * Test to execute.
+     * 
+     * @parameter expression="${test}"
+     */
+    private String test;
 
     /**
      * The maven project.
@@ -87,6 +96,26 @@ public class InstallMojo extends AbstractMojo
 
     @Override
     public void execute() throws MojoExecutionException
+    {
+        System.out.println( test );
+        if ( test != null )
+        {
+            executeTest();
+        }
+        assembleInstall();
+    }
+
+    private void executeTest() throws MojoExecutionException
+    {
+        executeMojo(
+                plugin( groupId( "org.apache.maven.plugins" ),
+                        artifactId( "maven-surefire-plugin" ), version( "2.10" ) ),
+                        goal( "test" ),
+                        configuration( element( name( "test" ), test ) ),
+                        executionEnvironment( project, session, pluginManager ) );
+    }
+
+    private void assembleInstall() throws MojoExecutionException
     {
         final File destFile = DocsAssembler.assemble( project, getLog(),
                 projectHelper, sourceDirectories );

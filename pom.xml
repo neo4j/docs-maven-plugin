@@ -41,7 +41,9 @@
           <artifactId>docs-maven-plugin</artifactId>
           <groupId>org.neo4j.build.plugins</groupId>
           <version>0.1-SNAPSHOT</version>
-          <!--  
+          <!--  the directories below will be added by default,
+            using the config element will _replace_ the defaults. -->
+          <!--
           <configuration>
             <sourceDirectories>
               <sourceDirectory>${basedir}/src/docs</sourceDirectory>
@@ -49,10 +51,25 @@
             </sourceDirectories>
           </configuration>
            -->
+          <!--
+          <configuration>
+            <executions>
+              <execution>
+                <id>assemble-docs</id>
+                <phase>package</phase>
+                <goals><goal>assemble</goal></goals>
+              </execution>
+            </executions>
+          </configuration>
+           -->
         </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+      </plugin>
       <plugin>
         <artifactId>docs-maven-plugin</artifactId>
         <groupId>org.neo4j.build.plugins</groupId>
