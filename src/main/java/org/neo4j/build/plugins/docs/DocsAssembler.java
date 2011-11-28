@@ -24,15 +24,21 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
+import org.apache.maven.shared.filtering.MavenFilteringException;
+import org.apache.maven.shared.filtering.MavenResourcesExecution;
+import org.apache.maven.shared.filtering.MavenResourcesFiltering;
+import org.codehaus.plexus.util.FileUtils;
 
 public final class DocsAssembler
 {
@@ -45,6 +51,8 @@ public final class DocsAssembler
     private final MavenProject project;
 
     private final MavenProjectHelper projectHelper;
+
+    private MavenResourcesFiltering resourceFiltering;
 
     private Log getLog()
     {
@@ -59,6 +67,14 @@ public final class DocsAssembler
         this.projectHelper = projectHelper;
     }
 
+    public DocsAssembler( final MavenProject project, final Log log,
+            final MavenProjectHelper projectHelper,
+            final MavenResourcesFiltering resourceFiltering )
+    {
+        this( project, log, projectHelper );
+        this.resourceFiltering = resourceFiltering;
+    }
+
     static File assemble( final MavenProject project, final Log log,
             final MavenProjectHelper projectHelper,
             final List<String> sourceDirectories )
@@ -69,10 +85,28 @@ public final class DocsAssembler
         return assembler.doAssembly( sourceDirectories );
     }
 
+    static File assemble( final MavenProject project, final Log log,
+            final MavenProjectHelper projectHelper,
+            final List<String> sourceDirectories,
+            final MavenResourcesFiltering resourceFiltering )
+            throws MojoExecutionException
+    {
+        DocsAssembler assembler = new DocsAssembler( project, log,
+                projectHelper, resourceFiltering );
+        return assembler.doAssembly( sourceDirectories );
+    }
+
     private File doAssembly( final List<String> sourceDirectories )
             throws MojoExecutionException
     {
-        File destFile = createArchive( getDirectories( sourceDirectories ) );
+        List<File> dirs = getDirectories( sourceDirectories );
+
+        if ( resourceFiltering != null )
+        {
+            filterResources( dirs );
+            // TODO in this case, the filter target is the only one to zip.
+        }
+        File destFile = createArchive( dirs );
 
         projectHelper.attachArtifact( project, "jar", "docs", destFile );
 
@@ -128,6 +162,43 @@ public final class DocsAssembler
             }
         }
         return destFile;
+    }
+
+    private void filterResources( final List<File> directories )
+    {
+        System.out.println( "lets filter resources ..." );
+        MavenResourcesExecution resourcesExecution = new MavenResourcesExecution();
+        resourcesExecution.setEncoding( "UTF-8" );
+        resourcesExecution.setMavenProject( project );
+        resourcesExecution.setOutputDirectory( new File( "target/gendocs" ) );
+        resourcesExecution.setResourcesBaseDirectory( new File( "target/x" ) );
+        resourcesExecution.addFilterWrapper( new FileUtils.FilterWrapper()
+        {
+            @Override
+            public Reader getReader( final Reader reader )
+            {
+                return reader;
+            }
+        } );
+        List<Resource> resources = new ArrayList<Resource>();
+        for ( File dir : directories )
+        {
+            Resource resource = new Resource();
+            resource.setDirectory( dir.getAbsolutePath() );
+            resource.setTargetPath( "target" );
+            resource.setFiltering( true );
+            resources.add( resource );
+        }
+        resourcesExecution.setResources( resources );
+        try
+        {
+            resourceFiltering.filterResources( resourcesExecution );
+        }
+        catch ( MavenFilteringException e )
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     private void zipDirectory( final ZipOutputStream zipOut, final File dir )
@@ -223,4 +294,3 @@ public final class DocsAssembler
         directories.add( dir );
     }
 }
-

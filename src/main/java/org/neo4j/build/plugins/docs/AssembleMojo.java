@@ -25,6 +25,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
+import org.apache.maven.shared.filtering.MavenResourcesFiltering;
 
 /**
  * Goal which assembles docs.
@@ -53,11 +54,16 @@ public class AssembleMojo extends AbstractMojo
      */
     private MavenProjectHelper projectHelper;
 
+    /**
+     * @component
+     */
+    private MavenResourcesFiltering resourceFiltering;
+
     @Override
     public void execute() throws MojoExecutionException
     {
         DocsAssembler.assemble( project, getLog(), projectHelper,
-                sourceDirectories );
+                sourceDirectories, resourceFiltering );
     }
 }
 
