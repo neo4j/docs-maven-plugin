@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -101,12 +102,18 @@ public final class DocsAssembler
     {
         List<File> dirs = getDirectories( sourceDirectories );
 
+        File destFile = null;
         if ( resourceFiltering != null )
         {
-            filterResources( dirs );
-            // TODO in this case, the filter target is the only one to zip.
+            File target = new File( new File( project.getBuild()
+                    .getDirectory() ), "filtered-docs" );
+            filterResources( dirs, target );
+            destFile = createArchive( Collections.singletonList( target ) );
         }
-        File destFile = createArchive( dirs );
+        else
+        {
+            destFile = createArchive( dirs );
+        }
 
         projectHelper.attachArtifact( project, "jar", "docs", destFile );
 
@@ -164,14 +171,17 @@ public final class DocsAssembler
         return destFile;
     }
 
-    private void filterResources( final List<File> directories )
+    private void filterResources( final List<File> directories, File targetDir )
     {
-        System.out.println( "lets filter resources ..." );
+        getLog().info( "Filter target: " + targetDir );
+        int baseDirLength = project.getBasedir()
+                .getAbsolutePath()
+                .length() + 1;
         MavenResourcesExecution resourcesExecution = new MavenResourcesExecution();
         resourcesExecution.setEncoding( "UTF-8" );
         resourcesExecution.setMavenProject( project );
-        resourcesExecution.setOutputDirectory( new File( "target/gendocs" ) );
-        resourcesExecution.setResourcesBaseDirectory( new File( "target/x" ) );
+        resourcesExecution.setOutputDirectory( targetDir );
+        resourcesExecution.setResourcesBaseDirectory( project.getBasedir() );
         resourcesExecution.addFilterWrapper( new FileUtils.FilterWrapper()
         {
             @Override
@@ -184,8 +194,9 @@ public final class DocsAssembler
         for ( File dir : directories )
         {
             Resource resource = new Resource();
-            resource.setDirectory( dir.getAbsolutePath() );
-            resource.setTargetPath( "target" );
+            resource.setDirectory( dir.getAbsolutePath()
+                    .substring( baseDirLength ) );
+            getLog().info( "Adding source directory: " + dir );
             resource.setFiltering( true );
             resources.add( resource );
         }
