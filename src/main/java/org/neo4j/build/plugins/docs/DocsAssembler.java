@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -55,58 +56,49 @@ public final class DocsAssembler
 
     private MavenResourcesFiltering resourceFiltering;
 
+    private MavenSession session;
+
     private Log getLog()
     {
         return log;
     }
 
-    private DocsAssembler( final MavenProject project, final Log log,
-            final MavenProjectHelper projectHelper )
+    public DocsAssembler( final MavenProject project, final Log log,
+            final MavenProjectHelper projectHelper,
+            final MavenResourcesFiltering resourceFiltering,
+            MavenSession session )
     {
         this.project = project;
         this.log = log;
         this.projectHelper = projectHelper;
-    }
-
-    public DocsAssembler( final MavenProject project, final Log log,
-            final MavenProjectHelper projectHelper,
-            final MavenResourcesFiltering resourceFiltering )
-    {
-        this( project, log, projectHelper );
         this.resourceFiltering = resourceFiltering;
+        this.session = session;
     }
 
-    static File assemble( final MavenProject project, final Log log,
-            final MavenProjectHelper projectHelper,
-            final List<String> sourceDirectories )
+    static File assemble( final List<String> sourceDirectories, final boolean filter,
+            final Log log,
+            MavenSession session, final MavenProject project,
+            final MavenProjectHelper projectHelper, MavenResourcesFiltering resourceFiltering )
             throws MojoExecutionException
     {
         DocsAssembler assembler = new DocsAssembler( project, log,
-                projectHelper );
-        return assembler.doAssembly( sourceDirectories );
+                projectHelper, resourceFiltering, session );
+        return assembler.doAssembly( sourceDirectories, filter );
     }
 
-    static File assemble( final MavenProject project, final Log log,
-            final MavenProjectHelper projectHelper,
-            final List<String> sourceDirectories,
-            final MavenResourcesFiltering resourceFiltering )
+    private File doAssembly( final List<String> sourceDirectories,
+            final boolean filter )
             throws MojoExecutionException
     {
-        DocsAssembler assembler = new DocsAssembler( project, log,
-                projectHelper, resourceFiltering );
-        return assembler.doAssembly( sourceDirectories );
-    }
-
-    private File doAssembly( final List<String> sourceDirectories )
-            throws MojoExecutionException
-    {
+        getLog().info( "Filtering is: " + ( filter ? "on" : "off" ) );
         List<File> dirs = getDirectories( sourceDirectories );
 
         File destFile = null;
-        if ( resourceFiltering != null )
+        if ( filter )
         {
             File target = new File( new File( project.getBuild()
                     .getDirectory() ), "filtered-docs" );
+            deleteRecursively( target );
             filterResources( dirs, target );
             destFile = createArchive( Collections.singletonList( target ) );
         }
@@ -177,10 +169,21 @@ public final class DocsAssembler
         int baseDirLength = project.getBasedir()
                 .getAbsolutePath()
                 .length() + 1;
-        MavenResourcesExecution resourcesExecution = new MavenResourcesExecution();
-        resourcesExecution.setEncoding( "UTF-8" );
-        resourcesExecution.setMavenProject( project );
-        resourcesExecution.setOutputDirectory( targetDir );
+        List<Resource> resources = new ArrayList<Resource>();
+        for ( File dir : directories )
+        {
+            Resource resource = new Resource();
+            resource.setDirectory( dir.getAbsolutePath()
+                    .substring( baseDirLength ) );
+            resource.setFiltering( true );
+            getLog().info( "Adding source directory: " + dir );
+            resources.add( resource );
+        }
+
+        MavenResourcesExecution resourcesExecution = new MavenResourcesExecution(
+                resources, targetDir, project, "UTF-8",
+                Collections.<Object>emptyList(),
+                Collections.emptyList(), session );
         resourcesExecution.setResourcesBaseDirectory( project.getBasedir() );
         resourcesExecution.addFilterWrapper( new FileUtils.FilterWrapper()
         {
@@ -190,25 +193,13 @@ public final class DocsAssembler
                 return reader;
             }
         } );
-        List<Resource> resources = new ArrayList<Resource>();
-        for ( File dir : directories )
-        {
-            Resource resource = new Resource();
-            resource.setDirectory( dir.getAbsolutePath()
-                    .substring( baseDirLength ) );
-            getLog().info( "Adding source directory: " + dir );
-            resource.setFiltering( true );
-            resources.add( resource );
-        }
-        resourcesExecution.setResources( resources );
         try
         {
             resourceFiltering.filterResources( resourcesExecution );
         }
         catch ( MavenFilteringException e )
         {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            getLog().error( e );
         }
     }
 
@@ -303,5 +294,26 @@ public final class DocsAssembler
                                               + dir.getAbsolutePath() );
         }
         directories.add( dir );
+    }
+
+    private static void deleteRecursively( File file )
+    {
+        if ( !file.exists() )
+        {
+            return;
+        }
+
+        if ( file.isDirectory() )
+        {
+            for ( File child : file.listFiles() )
+            {
+                deleteRecursively( child );
+            }
+        }
+        if ( !file.delete() )
+        {
+            throw new RuntimeException(
+                    "Couldn't empty database. Offending file:" + file );
+        }
     }
 }

@@ -31,14 +31,9 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
 import java.io.File;
-import java.util.List;
 
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.MavenProjectHelper;
 
 /**
  * Goal which installs docs. Note: requires Maven 3 for plugin management (as it
@@ -48,43 +43,14 @@ import org.apache.maven.project.MavenProjectHelper;
  * @requiresDirectInvocation
  * @requiresDependencyResolution test
  */
-public class InstallMojo extends AbstractMojo
+public class InstallMojo extends AssembleMojo
 {
-    /**
-     * Directories to include in the assembly.
-     * 
-     * @parameter
-     */
-    private List<String> sourceDirectories;
-
     /**
      * Test to execute.
      * 
      * @parameter expression="${test}"
      */
     private String test;
-
-    /**
-     * The maven project.
-     * 
-     * @parameter expression="${project}"
-     * @readonly
-     */
-    private MavenProject project;
-
-    /**
-     * @component
-     */
-    private MavenProjectHelper projectHelper;
-
-    /**
-     * The Maven Session Object
-     * 
-     * @parameter expression="${session}"
-     * @required
-     * @readonly
-     */
-    private MavenSession session;
 
     /**
      * The Maven PluginManager Object
@@ -117,8 +83,9 @@ public class InstallMojo extends AbstractMojo
 
     private void assembleInstall() throws MojoExecutionException
     {
-        final File destFile = DocsAssembler.assemble( project, getLog(),
-                projectHelper, sourceDirectories );
+        final File destFile = DocsAssembler.assemble( sourceDirectories, filter,
+                getLog(), session, project, projectHelper,
+                resourceFiltering );
 
         final String file = destFile.getAbsolutePath();
         final String pomFile = new File( project.getBasedir(), "pom.xml" ).getAbsolutePath();
@@ -143,4 +110,3 @@ public class InstallMojo extends AbstractMojo
                                 executionEnvironment( project, session, pluginManager ) );
     }
 }
-

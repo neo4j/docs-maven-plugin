@@ -21,6 +21,7 @@ package org.neo4j.build.plugins.docs;
 
 import java.util.List;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
@@ -39,7 +40,14 @@ public class AssembleMojo extends AbstractMojo
      * 
      * @parameter
      */
-    private List<String> sourceDirectories;
+    protected List<String> sourceDirectories;
+
+    /**
+     * If filtering should be applied to files.
+     * 
+     * @parameter expression="${filter}" default-value="false"
+     */
+    protected boolean filter;
 
     /**
      * The maven project.
@@ -47,23 +55,31 @@ public class AssembleMojo extends AbstractMojo
      * @parameter expression="${project}"
      * @readonly
      */
-    private MavenProject project;
+    protected MavenProject project;
 
     /**
      * @component
      */
-    private MavenProjectHelper projectHelper;
+    protected MavenProjectHelper projectHelper;
 
     /**
-     * @component
+     * 
+     * @component role="org.apache.maven.shared.filtering.MavenResourcesFiltering" role-hint="default"
+     * @required
+     */    
+    protected MavenResourcesFiltering resourceFiltering;
+
+    /**
+     * @parameter default-value="${session}"
+     * @readonly
+     * @required
      */
-    private MavenResourcesFiltering resourceFiltering;
+    protected MavenSession session;
 
     @Override
     public void execute() throws MojoExecutionException
     {
-        DocsAssembler.assemble( project, getLog(), projectHelper,
-                sourceDirectories, resourceFiltering );
+        DocsAssembler.assemble( sourceDirectories, filter, getLog(),
+                session, project, projectHelper, resourceFiltering );
     }
 }
-
