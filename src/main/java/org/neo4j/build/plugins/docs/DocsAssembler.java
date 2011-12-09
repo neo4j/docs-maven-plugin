@@ -44,6 +44,10 @@ import org.codehaus.plexus.util.FileUtils;
 
 public final class DocsAssembler
 {
+    private static final String TYPE = "jar";
+
+    private static final String CLASSIFIER = "docs";
+
     private static final int BUFFER_SIZE = 1024;
 
     private int currentBaseDirPathLength;
@@ -75,10 +79,10 @@ public final class DocsAssembler
         this.session = session;
     }
 
-    static File assemble( final List<String> sourceDirectories, final boolean filter,
-            final Log log,
-            MavenSession session, final MavenProject project,
-            final MavenProjectHelper projectHelper, MavenResourcesFiltering resourceFiltering )
+    static File assemble( final List<String> sourceDirectories,
+            final boolean filter, final Log log, MavenSession session,
+            final MavenProject project, final MavenProjectHelper projectHelper,
+            MavenResourcesFiltering resourceFiltering )
             throws MojoExecutionException
     {
         DocsAssembler assembler = new DocsAssembler( project, log,
@@ -87,8 +91,7 @@ public final class DocsAssembler
     }
 
     private File doAssembly( final List<String> sourceDirectories,
-            final boolean filter )
-            throws MojoExecutionException
+            final boolean filter ) throws MojoExecutionException
     {
         getLog().info( "Filtering is: " + ( filter ? "on" : "off" ) );
         List<File> dirs = getDirectories( sourceDirectories );
@@ -107,7 +110,7 @@ public final class DocsAssembler
             destFile = createArchive( dirs );
         }
 
-        projectHelper.attachArtifact( project, "jar", "docs", destFile );
+        projectHelper.attachArtifact( project, TYPE, CLASSIFIER, destFile );
 
         return destFile;
     }
@@ -118,7 +121,8 @@ public final class DocsAssembler
         getLog().info( "Creating docs archive." );
 
         final String filename = project.getArtifactId() + "-"
-                                + project.getVersion() + "-docs.jar";
+                                + project.getVersion() + "-" + CLASSIFIER + "."
+                                + TYPE;
         final File destFile = new File( project.getBuild()
                 .getDirectory(), filename );
         if ( destFile.exists() && !destFile.delete() )
@@ -182,8 +186,8 @@ public final class DocsAssembler
 
         MavenResourcesExecution resourcesExecution = new MavenResourcesExecution(
                 resources, targetDir, project, "UTF-8",
-                Collections.<Object>emptyList(),
-                Collections.emptyList(), session );
+                Collections.<Object>emptyList(), Collections.emptyList(),
+                session );
         resourcesExecution.setResourcesBaseDirectory( project.getBasedir() );
         resourcesExecution.addFilterWrapper( new FileUtils.FilterWrapper()
         {
@@ -261,9 +265,9 @@ public final class DocsAssembler
             // add default directories
             // ./src/docs and ./target/docs
             addDirectory( new File( new File( project.getBasedir(), "src" ),
-                    "docs" ), directories );
+                    CLASSIFIER ), directories );
             addDirectory( new File( project.getBuild()
-                    .getDirectory(), "docs" ), directories );
+                    .getDirectory(), CLASSIFIER ), directories );
         }
         else
         {
