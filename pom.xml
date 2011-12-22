@@ -47,28 +47,17 @@
             </sourceDirectories>
           </configuration>
            -->
-          <!--
-          <configuration>
-            <executions>
-              <execution>
-                <id>assemble-docs</id>
-                <phase>package</phase>
-                <goals><goal>assemble</goal></goals>
-              </execution>
-            </executions>
-          </configuration>
-           -->
         </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-      </plugin>
-      <plugin>
         <artifactId>docs-maven-plugin</artifactId>
         <groupId>org.neo4j.build.plugins</groupId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
       </plugin>
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
@@ -160,4 +149,33 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+  
+  <profiles>
+    <profile>
+      <id>enable-dogfooding-plugin</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+        <property>
+            <name>dogfood</name>
+        </property>
+      </activation>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <artifactId>docs-maven-plugin</artifactId>
+              <groupId>org.neo4j.build.plugins</groupId>
+              <executions>
+                <execution>
+                  <id>assemble-docs</id>
+                  <goals><goal>assemble</goal></goals>
+                </execution>
+              </executions>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+  </profiles>  
+  
 </project>

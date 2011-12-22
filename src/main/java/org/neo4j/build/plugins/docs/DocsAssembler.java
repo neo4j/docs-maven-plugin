@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.maven.execution.MavenSession;
@@ -44,11 +45,13 @@ import org.codehaus.plexus.util.FileUtils;
 
 public final class DocsAssembler
 {
-    private static final String TYPE = "jar";
+    private static final String DOCS_DIRNAME = "docs";
 
     private static final String CLASSIFIER = "docs";
 
-    private static final int BUFFER_SIZE = 1024;
+    private static final String TYPE = "jar";
+
+    private static final int BUFFER_SIZE = 4096;
 
     private int currentBaseDirPathLength;
 
@@ -61,6 +64,8 @@ public final class DocsAssembler
     private MavenResourcesFiltering resourceFiltering;
 
     private MavenSession session;
+
+    private ZipOutputStream zipOut;
 
     private Log getLog()
     {
@@ -132,7 +137,7 @@ public final class DocsAssembler
         }
 
         FileOutputStream fileOut = null;
-        ZipOutputStream zipOut = null;
+        zipOut = null;
         try
         {
             fileOut = new FileOutputStream( destFile );
@@ -143,7 +148,7 @@ public final class DocsAssembler
                 currentBaseDirPathLength = dir.getAbsolutePath()
                         .length();
                 getLog().info( "Adding source directory: " + dir );
-                zipDirectory( zipOut, dir );
+                zipDirectory( dir );
             }
         }
         catch ( FileNotFoundException e )
@@ -157,6 +162,17 @@ public final class DocsAssembler
                 try
                 {
                     zipOut.close();
+                }
+                catch ( ZipException e )
+                {
+                    if ( "ZIP file must have at least one entry".equals( e.getMessage() ) )
+                    {
+                        getLog().warn( "There were no docs to assemble." );
+                    }
+                    else
+                    {
+                        getLog().error( e );
+                    }
                 }
                 catch ( IOException e )
                 {
@@ -186,8 +202,7 @@ public final class DocsAssembler
 
         MavenResourcesExecution resourcesExecution = new MavenResourcesExecution(
                 resources, targetDir, project, "UTF-8",
-                Collections.<Object>emptyList(), Collections.emptyList(),
-                session );
+                Collections.emptyList(), Collections.emptyList(), session );
         resourcesExecution.setResourcesBaseDirectory( project.getBasedir() );
         resourcesExecution.addFilterWrapper( new FileUtils.FilterWrapper()
         {
@@ -207,8 +222,7 @@ public final class DocsAssembler
         }
     }
 
-    private void zipDirectory( final ZipOutputStream zipOut, final File dir )
-            throws MojoExecutionException
+    private void zipDirectory( final File dir ) throws MojoExecutionException
     {
         byte[] buf = new byte[BUFFER_SIZE];
 
@@ -216,7 +230,7 @@ public final class DocsAssembler
         {
             if ( file.isDirectory() )
             {
-                zipDirectory( zipOut, file );
+                zipDirectory( file );
                 continue;
             }
             FileInputStream inFile = null;
@@ -265,9 +279,9 @@ public final class DocsAssembler
             // add default directories
             // ./src/docs and ./target/docs
             addDirectory( new File( new File( project.getBasedir(), "src" ),
-                    CLASSIFIER ), directories );
+                    DOCS_DIRNAME ), directories );
             addDirectory( new File( project.getBuild()
-                    .getDirectory(), CLASSIFIER ), directories );
+                    .getDirectory(), DOCS_DIRNAME ), directories );
         }
         else
         {
@@ -285,6 +299,11 @@ public final class DocsAssembler
         if ( !dir.exists() )
         {
             getLog().info( "Skipping, does not exist: " + dir );
+            return;
+        }
+        if ( dir.listFiles().length == 0 )
+        {
+            getLog().info( "Skipping, is empty: " + dir );
             return;
         }
         if ( !dir.isDirectory() )

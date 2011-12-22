@@ -32,6 +32,7 @@ import org.apache.maven.shared.filtering.MavenResourcesFiltering;
  * Goal which assembles docs.
  * 
  * @goal assemble
+ * @phase package
  */
 public class AssembleMojo extends AbstractMojo
 {
