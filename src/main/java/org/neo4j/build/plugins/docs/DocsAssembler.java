@@ -72,7 +72,7 @@ public final class DocsAssembler
         return log;
     }
 
-    public DocsAssembler( final MavenProject project, final Log log,
+    private DocsAssembler( final MavenProject project, final Log log,
             final MavenProjectHelper projectHelper,
             final MavenResourcesFiltering resourceFiltering,
             MavenSession session )

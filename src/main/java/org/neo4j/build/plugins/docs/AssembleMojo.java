@@ -33,6 +33,7 @@ import org.apache.maven.shared.filtering.MavenResourcesFiltering;
  * 
  * @goal assemble
  * @phase package
+ * @threadsafe
  */
 public class AssembleMojo extends AbstractMojo
 {

@@ -18,8 +18,6 @@ After installing it, add it to the project:
    -->
 </plugin>
 
-Configuring execution from the pom.xml doesn't work yet.
-
 There's two new commands you can use:
 
 mvn docs:assembly
