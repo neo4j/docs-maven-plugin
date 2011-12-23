@@ -46,11 +46,18 @@ public class AssembleMojo extends AbstractMojo
     protected List<String> sourceDirectories;
 
     /**
-     * If filtering should be applied to files.
+     * Set to "true" to activate filtering.
      * 
      * @parameter expression="${filter}" default-value="false"
      */
     protected boolean filter;
+
+    /**
+     * Set to "true" to skip execution.
+     * 
+     * @parameter expression="${skip}" default-value="false"
+     */
+    protected boolean skip;
 
     /**
      * The maven project.
@@ -82,7 +89,19 @@ public class AssembleMojo extends AbstractMojo
     @Override
     public void execute() throws MojoExecutionException
     {
-        DocsAssembler.assemble( sourceDirectories, filter, getLog(),
-                session, project, projectHelper, resourceFiltering );
+        if ( skip )
+        {
+            skip();
+        }
+        else
+        {
+            DocsAssembler.assemble( sourceDirectories, filter, getLog(),
+                    session, project, projectHelper, resourceFiltering );
+        }
+    }
+
+    protected void skip()
+    {
+        getLog().info( "Docs-plugin execution skipped." );
     }
 }

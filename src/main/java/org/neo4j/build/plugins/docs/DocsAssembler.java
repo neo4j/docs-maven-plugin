@@ -100,6 +100,11 @@ final class DocsAssembler
     {
         getLog().info( "Filtering is: " + ( filter ? "on" : "off" ) );
         List<File> dirs = getDirectories( sourceDirectories );
+        if ( dirs.size() == 0 )
+        {
+            getLog().warn( "There are no docs to assemble." );
+            return null;
+        }
 
         File destFile = null;
         if ( filter )

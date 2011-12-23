@@ -63,6 +63,11 @@ public class InstallMojo extends AssembleMojo
     @Override
     public void execute() throws MojoExecutionException
     {
+        if ( skip )
+        {
+            skip();
+            return;
+        }
         if ( test != null )
         {
             getLog().info( "Preparing to execute test: " + test );
