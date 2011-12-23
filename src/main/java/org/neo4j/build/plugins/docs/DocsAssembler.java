@@ -43,7 +43,7 @@ import org.apache.maven.shared.filtering.MavenResourcesExecution;
 import org.apache.maven.shared.filtering.MavenResourcesFiltering;
 import org.codehaus.plexus.util.FileUtils;
 
-public final class DocsAssembler
+final class DocsAssembler
 {
     private static final String DOCS_DIRNAME = "docs";
 

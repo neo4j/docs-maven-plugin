@@ -38,7 +38,8 @@ import org.apache.maven.shared.filtering.MavenResourcesFiltering;
 public class AssembleMojo extends AbstractMojo
 {
     /**
-     * Directories to include in the assembly.
+     * Directories to include in the assembly. This setting replaces the default
+     * one, which is to include src/docs/ and target/docs/.
      * 
      * @parameter
      */
