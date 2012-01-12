@@ -43,8 +43,12 @@ import org.apache.maven.plugin.MojoExecutionException;
  * @requiresDirectInvocation
  * @requiresDependencyResolution test
  */
-public class InstallMojo extends AssembleMojo
+public class InstallMojo extends AbstractDocsMojo
 {
+    private static final String INSTALL_PLUGIN_VERSION = "2.3.1";
+
+    private static final String SUREFIRE_PLUGIN_VERSION = "2.11";
+
     /**
      * Test to execute.
      * 
@@ -63,11 +67,6 @@ public class InstallMojo extends AssembleMojo
     @Override
     public void execute() throws MojoExecutionException
     {
-        if ( skip )
-        {
-            skip();
-            return;
-        }
         if ( test != null )
         {
             getLog().info( "Preparing to execute test: " + test );
@@ -80,16 +79,16 @@ public class InstallMojo extends AssembleMojo
     {
         executeMojo(
                 plugin( groupId( "org.apache.maven.plugins" ),
-                        artifactId( "maven-surefire-plugin" ), version( "2.10" ) ),
-                        goal( "test" ),
-                        configuration( element( name( "test" ), test ) ),
-                        executionEnvironment( project, session, pluginManager ) );
+                        artifactId( "maven-surefire-plugin" ), version( SUREFIRE_PLUGIN_VERSION ) ),
+                goal( "test" ),
+                configuration( element( name( "test" ), test ) ),
+                executionEnvironment( project, session, pluginManager ) );
     }
 
     private void assembleInstall() throws MojoExecutionException
     {
-        final File destFile = DocsAssembler.assemble( sourceDirectories, filter,
-                getLog(), session, project, projectHelper,
+        final File destFile = DocsAssembler.assemble( sourceDirectories,
+                filter, getLog(), session, project, projectHelper,
                 resourceFiltering );
 
         final String file = destFile.getAbsolutePath();
@@ -97,21 +96,21 @@ public class InstallMojo extends AssembleMojo
         final String groupId = project.getGroupId();
         final String artifactId = project.getArtifactId();
         final String version = project.getVersion();
-        final String classifier = "docs";
-        final String packaging = "jar";
+        final String classifier = DocsAssembler.CLASSIFIER;
+        final String packaging = DocsAssembler.TYPE;
         final String generatePom = "false";
         executeMojo(
                 plugin( groupId( "org.apache.maven.plugins" ),
-                        artifactId( "maven-install-plugin" ), version( "2.3.1" ) ),
-                        goal( "install-file" ),
-                        configuration( element( name( "file" ), file ),
-                                element( name( "pomFile" ), pomFile ),
-                                element( name( "groupId" ), groupId ),
-                                element( name( "artifactId" ), artifactId ),
-                                element( name( "version" ), version ),
-                                element( name( "classifier" ), classifier ),
-                                element( name( "packaging" ), packaging ),
-                                element( name( "generatePom" ), generatePom ) ),
-                                executionEnvironment( project, session, pluginManager ) );
+                        artifactId( "maven-install-plugin" ), version( INSTALL_PLUGIN_VERSION ) ),
+                goal( "install-file" ),
+                configuration( element( name( "file" ), file ),
+                        element( name( "pomFile" ), pomFile ),
+                        element( name( "groupId" ), groupId ),
+                        element( name( "artifactId" ), artifactId ),
+                        element( name( "version" ), version ),
+                        element( name( "classifier" ), classifier ),
+                        element( name( "packaging" ), packaging ),
+                        element( name( "generatePom" ), generatePom ) ),
+                executionEnvironment( project, session, pluginManager ) );
     }
 }

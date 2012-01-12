@@ -19,14 +19,8 @@
  */
 package org.neo4j.build.plugins.docs;
 
-import java.util.List;
 
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.MavenProjectHelper;
-import org.apache.maven.shared.filtering.MavenResourcesFiltering;
 
 /**
  * Goal which assembles docs.
@@ -35,61 +29,19 @@ import org.apache.maven.shared.filtering.MavenResourcesFiltering;
  * @phase package
  * @threadsafe
  */
-public class AssembleMojo extends AbstractMojo
+public class AssembleMojo extends AbstractDocsMojo
 {
-    /**
-     * Directories to include in the assembly. This setting replaces the default
-     * one, which is to include src/docs/ and target/docs/.
-     * 
-     * @parameter
-     */
-    protected List<String> sourceDirectories;
-
-    /**
-     * Set to "true" to activate filtering.
-     * 
-     * @parameter expression="${filter}" default-value="false"
-     */
-    protected boolean filter;
-
     /**
      * Set to "true" to skip execution.
      * 
-     * @parameter expression="${skip}" default-value="false"
+     * @parameter expression="${skipdocs}" default-value="false"
      */
-    protected boolean skip;
-
-    /**
-     * The maven project.
-     * 
-     * @parameter expression="${project}"
-     * @readonly
-     */
-    protected MavenProject project;
-
-    /**
-     * @component
-     */
-    protected MavenProjectHelper projectHelper;
-
-    /**
-     * 
-     * @component role="org.apache.maven.shared.filtering.MavenResourcesFiltering" role-hint="default"
-     * @required
-     */    
-    protected MavenResourcesFiltering resourceFiltering;
-
-    /**
-     * @parameter default-value="${session}"
-     * @readonly
-     * @required
-     */
-    protected MavenSession session;
+    protected boolean skipdocs;
 
     @Override
     public void execute() throws MojoExecutionException
     {
-        if ( skip )
+        if ( skipdocs )
         {
             skip();
         }

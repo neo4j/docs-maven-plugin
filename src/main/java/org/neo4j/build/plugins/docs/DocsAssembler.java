@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -45,15 +46,15 @@ import org.codehaus.plexus.util.FileUtils;
 
 final class DocsAssembler
 {
-    private static final String DOCS_DIRNAME = "docs";
+    static final String CLASSIFIER = "docs";
 
-    private static final String CLASSIFIER = "docs";
-
-    private static final String TYPE = "jar";
+    static final String TYPE = "jar";
 
     private static final int BUFFER_SIZE = 4096;
 
-    private int currentBaseDirPathLength;
+    private static final String DOCS_DIRNAME = "docs";
+
+    private static final List<String> NON_FILTERED_FILE_EXTENSIONS;
 
     private final Log log;
 
@@ -65,7 +66,20 @@ final class DocsAssembler
 
     private MavenSession session;
 
+    private int currentBaseDirPathLength;
+
     private ZipOutputStream zipOut;
+
+    static
+    {
+        // these are always non-filtered anyhow:
+        // jpg, jpeg, gif, bmp, png
+        // as defined in
+        // org.apache.maven.shared.filtering.DefaultMavenResourcesFiltering
+
+        NON_FILTERED_FILE_EXTENSIONS = Arrays.asList( new String[] { "tiff",
+                "tif", "pdf", "zip", "gz" } );
+    }
 
     private Log getLog()
     {
@@ -207,7 +221,7 @@ final class DocsAssembler
 
         MavenResourcesExecution resourcesExecution = new MavenResourcesExecution(
                 resources, targetDir, project, "UTF-8",
-                Collections.emptyList(), Collections.emptyList(), session );
+                Collections.emptyList(), NON_FILTERED_FILE_EXTENSIONS, session );
         resourcesExecution.setResourcesBaseDirectory( project.getBasedir() );
         resourcesExecution.addFilterWrapper( new FileUtils.FilterWrapper()
         {
@@ -341,7 +355,7 @@ final class DocsAssembler
         if ( !file.delete() )
         {
             throw new RuntimeException(
-                    "Couldn't empty database. Offending file:" + file );
+                    "Couldn't delete directory. Offending file:" + file );
         }
     }
 }
