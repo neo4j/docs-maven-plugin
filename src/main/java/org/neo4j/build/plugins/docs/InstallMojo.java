@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2002-2011 "Neo Technology,"
+ * Copyright (c) 2011-2012 "Neo Technology,"
  * Network Engine for Objects in Lund AB [http://neotechnology.com]
  *
  * This file is part of Neo4j.
@@ -49,6 +49,8 @@ public class InstallMojo extends AbstractDocsMojo
 
     private static final String SUREFIRE_PLUGIN_VERSION = "2.11";
 
+    private static final String COMPILE_PLUGIN_VERSION = "2.3.2";
+
     /**
      * Test to execute.
      * 
@@ -79,8 +81,14 @@ public class InstallMojo extends AbstractDocsMojo
     {
         executeMojo(
                 plugin( groupId( "org.apache.maven.plugins" ),
-                        artifactId( "maven-surefire-plugin" ), version( SUREFIRE_PLUGIN_VERSION ) ),
-                goal( "test" ),
+                        artifactId( "maven-compiler-plugin" ),
+                        version( COMPILE_PLUGIN_VERSION ) ),
+                goal( "testCompile" ), configuration(),
+                executionEnvironment( project, session, pluginManager ) );
+        executeMojo(
+                plugin( groupId( "org.apache.maven.plugins" ),
+                        artifactId( "maven-surefire-plugin" ),
+                        version( SUREFIRE_PLUGIN_VERSION ) ), goal( "test" ),
                 configuration( element( name( "test" ), test ) ),
                 executionEnvironment( project, session, pluginManager ) );
     }
@@ -101,7 +109,8 @@ public class InstallMojo extends AbstractDocsMojo
         final String generatePom = "false";
         executeMojo(
                 plugin( groupId( "org.apache.maven.plugins" ),
-                        artifactId( "maven-install-plugin" ), version( INSTALL_PLUGIN_VERSION ) ),
+                        artifactId( "maven-install-plugin" ),
+                        version( INSTALL_PLUGIN_VERSION ) ),
                 goal( "install-file" ),
                 configuration( element( name( "file" ), file ),
                         element( name( "pomFile" ), pomFile ),

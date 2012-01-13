@@ -16,13 +16,17 @@
     including executing a documentation-generating test
     and then install the assembled docs in the local repo.</description>
   <url>components.neo4j.org</url>
+  <inceptionYear>2011</inceptionYear>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.build.timestamp.format>yyyy</maven.build.timestamp.format>
+    <currentYear>${maven.build.timestamp}</currentYear>
     <skinGroupId>org.neo4j.maven.skins</skinGroupId>
     <skinArtifactId>default-skin</skinArtifactId>
     <skinVersion>4</skinVersion>
-    <licensesVersion>6</licensesVersion>
+    <licensesVersion>7</licensesVersion>
     <license-text.header>AGPL-3-header.txt</license-text.header>
     <docs.url>http://docs.neo4j.org/</docs.url>
   </properties>
@@ -375,6 +379,10 @@
             <include>src/**/*.java</include>
             <include>src/**/*.xml</include>
           </includes>
+          <properties>
+            <inceptionYear>${project.inceptionYear}</inceptionYear>
+            <currentYear>${currentYear}</currentYear>
+          </properties>
         </configuration>
       </plugin>
     </plugins>
@@ -385,18 +393,18 @@
       <dependency>
         <groupId>org.twdata.maven</groupId>
         <artifactId>mojo-executor</artifactId>
-        <version>[2.0]</version>
+        <version>2.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.shared</groupId>
         <artifactId>maven-filtering</artifactId>
-        <version>[1.0]</version>
+        <version>1.0</version>
       </dependency>
       <!-- testing -->
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>[4.10]</version>
+        <version>4.10</version>
         <scope>test</scope>
       </dependency>
       <!-- lock down versions -->
@@ -477,7 +485,6 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
-  
   <profiles>
     <profile>
       <id>enable-docs-plugin-dogfooding</id>

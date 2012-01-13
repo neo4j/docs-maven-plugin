@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2002-2011 "Neo Technology,"
+ * Copyright (c) 2011-2012 "Neo Technology,"
  * Network Engine for Objects in Lund AB [http://neotechnology.com]
  *
  * This file is part of Neo4j.
@@ -124,6 +124,13 @@ final class DocsAssembler
         final String filename = project.getArtifactId() + "-"
                                 + project.getVersion() + "-" + CLASSIFIER + "."
                                 + TYPE;
+        File targetDirectory = new File( project.getBuild()
+                .getDirectory() );
+        if ( !targetDirectory.exists() && !targetDirectory.mkdir() )
+        {
+            throw new MojoExecutionException(
+                    "Could not create: " + targetDirectory.getAbsolutePath() );
+        }
         final File destFile = new File( project.getBuild()
                 .getDirectory(), filename );
         if ( destFile.exists() && !destFile.delete() )
