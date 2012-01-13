@@ -87,11 +87,11 @@ public class InstallMojo extends AbstractDocsMojo
 
     private void assembleInstall() throws MojoExecutionException
     {
-        final File destFile = DocsAssembler.assemble( sourceDirectories,
+        final File destinationFile = new DocsAssembler( sourceDirectories,
                 filter, getLog(), session, project, projectHelper,
-                resourceFiltering );
+                resourceFiltering ).doAssembly();
 
-        final String file = destFile.getAbsolutePath();
+        final String file = destinationFile.getAbsolutePath();
         final String pomFile = new File( project.getBasedir(), "pom.xml" ).getAbsolutePath();
         final String groupId = project.getGroupId();
         final String artifactId = project.getArtifactId();

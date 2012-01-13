@@ -51,24 +51,16 @@ final class DocsAssembler
     static final String TYPE = "jar";
 
     private static final int BUFFER_SIZE = 4096;
-
     private static final String DOCS_DIRNAME = "docs";
-
     private static final List<String> NON_FILTERED_FILE_EXTENSIONS;
 
     private final Log log;
-
+    private final List<String> sourceDirectories;
+    private final boolean filter;
     private final MavenProject project;
-
     private final MavenProjectHelper projectHelper;
-
-    private MavenResourcesFiltering resourceFiltering;
-
-    private MavenSession session;
-
-    private int currentBaseDirPathLength;
-
-    private ZipOutputStream zipOut;
+    private final MavenResourcesFiltering resourceFiltering;
+    private final MavenSession session;
 
     static
     {
@@ -77,20 +69,17 @@ final class DocsAssembler
         // as defined in
         // org.apache.maven.shared.filtering.DefaultMavenResourcesFiltering
 
-        NON_FILTERED_FILE_EXTENSIONS = Arrays.asList( new String[] { "tiff",
-                "tif", "pdf", "zip", "gz" } );
+        NON_FILTERED_FILE_EXTENSIONS = Arrays.asList( "tiff",
+                "tif", "pdf", "zip", "gz" );
     }
 
-    private Log getLog()
+    public DocsAssembler( final List<String> sourceDirectories,
+            final boolean filter, final Log log, MavenSession session,
+            final MavenProject project, final MavenProjectHelper projectHelper,
+            MavenResourcesFiltering resourceFiltering )
     {
-        return log;
-    }
-
-    private DocsAssembler( final MavenProject project, final Log log,
-            final MavenProjectHelper projectHelper,
-            final MavenResourcesFiltering resourceFiltering,
-            MavenSession session )
-    {
+        this.sourceDirectories = sourceDirectories;
+        this.filter = filter;
         this.project = project;
         this.log = log;
         this.projectHelper = projectHelper;
@@ -98,51 +87,39 @@ final class DocsAssembler
         this.session = session;
     }
 
-    static File assemble( final List<String> sourceDirectories,
-            final boolean filter, final Log log, MavenSession session,
-            final MavenProject project, final MavenProjectHelper projectHelper,
-            MavenResourcesFiltering resourceFiltering )
-            throws MojoExecutionException
+    public File doAssembly() throws MojoExecutionException
     {
-        DocsAssembler assembler = new DocsAssembler( project, log,
-                projectHelper, resourceFiltering, session );
-        return assembler.doAssembly( sourceDirectories, filter );
-    }
-
-    private File doAssembly( final List<String> sourceDirectories,
-            final boolean filter ) throws MojoExecutionException
-    {
-        getLog().info( "Filtering is: " + ( filter ? "on" : "off" ) );
+        log.info( "Filtering is: " + (filter ? "on" : "off") );
         List<File> dirs = getDirectories( sourceDirectories );
         if ( dirs.size() == 0 )
         {
-            getLog().warn( "There are no docs to assemble." );
+            log.warn( "There are no docs to assemble." );
             return null;
         }
 
-        File destFile = null;
+        File destinationFile;
         if ( filter )
         {
             File target = new File( new File( project.getBuild()
                     .getDirectory() ), "filtered-docs" );
             deleteRecursively( target );
             filterResources( dirs, target );
-            destFile = createArchive( Collections.singletonList( target ) );
+            destinationFile = createArchive( Collections.singletonList( target ) );
         }
         else
         {
-            destFile = createArchive( dirs );
+            destinationFile = createArchive( dirs );
         }
 
-        projectHelper.attachArtifact( project, TYPE, CLASSIFIER, destFile );
+        projectHelper.attachArtifact( project, TYPE, CLASSIFIER, destinationFile );
 
-        return destFile;
+        return destinationFile;
     }
 
     private File createArchive( final List<File> directories )
             throws MojoExecutionException
     {
-        getLog().info( "Creating docs archive." );
+        log.info( "Creating docs archive." );
 
         final String filename = project.getArtifactId() + "-"
                                 + project.getVersion() + "-" + CLASSIFIER + "."
@@ -155,8 +132,8 @@ final class DocsAssembler
                                               + destFile.getAbsolutePath() );
         }
 
-        FileOutputStream fileOut = null;
-        zipOut = null;
+        FileOutputStream fileOut;
+        ZipOutputStream zipOut = null;
         try
         {
             fileOut = new FileOutputStream( destFile );
@@ -164,15 +141,15 @@ final class DocsAssembler
 
             for ( File dir : directories )
             {
-                currentBaseDirPathLength = dir.getAbsolutePath()
+                int currentBaseDirPathLength = dir.getAbsolutePath()
                         .length();
-                getLog().info( "Adding source directory: " + dir );
-                zipDirectory( dir );
+                log.info( "Adding source directory: " + dir );
+                zipDirectory( dir, currentBaseDirPathLength, zipOut );
             }
         }
         catch ( FileNotFoundException e )
         {
-            getLog().error( e );
+            log.error( e );
         }
         finally
         {
@@ -186,16 +163,16 @@ final class DocsAssembler
                 {
                     if ( "ZIP file must have at least one entry".equals( e.getMessage() ) )
                     {
-                        getLog().warn( "There were no docs to assemble." );
+                        log.warn( "There were no docs to assemble." );
                     }
                     else
                     {
-                        getLog().error( e );
+                        log.error( e );
                     }
                 }
                 catch ( IOException e )
                 {
-                    getLog().error( e );
+                    log.error( e );
                 }
             }
         }
@@ -204,7 +181,7 @@ final class DocsAssembler
 
     private void filterResources( final List<File> directories, File targetDir )
     {
-        getLog().info( "Filter target: " + targetDir );
+        log.info( "Filter target: " + targetDir );
         int baseDirLength = project.getBasedir()
                 .getAbsolutePath()
                 .length() + 1;
@@ -215,7 +192,7 @@ final class DocsAssembler
             resource.setDirectory( dir.getAbsolutePath()
                     .substring( baseDirLength ) );
             resource.setFiltering( true );
-            getLog().info( "Adding source directory: " + dir );
+            log.info( "Adding source directory: " + dir );
             resources.add( resource );
         }
 
@@ -237,11 +214,11 @@ final class DocsAssembler
         }
         catch ( MavenFilteringException e )
         {
-            getLog().error( e );
+            log.error( e );
         }
     }
 
-    private void zipDirectory( final File dir ) throws MojoExecutionException
+    private void zipDirectory( final File dir, int currentBaseDirPathLength, ZipOutputStream zipOut ) throws MojoExecutionException
     {
         byte[] buf = new byte[BUFFER_SIZE];
 
@@ -249,13 +226,13 @@ final class DocsAssembler
         {
             if ( file.isDirectory() )
             {
-                zipDirectory( file );
+                zipDirectory( file, currentBaseDirPathLength, zipOut );
                 continue;
             }
             FileInputStream inFile = null;
             try
             {
-                getLog().debug( "Adding: " + file.getAbsolutePath() );
+                log.debug( "Adding: " + file.getAbsolutePath() );
                 inFile = new FileInputStream( file.getAbsolutePath() );
                 zipOut.putNextEntry( new ZipEntry( file.getAbsolutePath()
                         .substring( currentBaseDirPathLength ) ) );
@@ -267,11 +244,11 @@ final class DocsAssembler
             }
             catch ( FileNotFoundException e )
             {
-                getLog().error( e );
+                log.error( e );
             }
             catch ( IOException e )
             {
-                getLog().error( e );
+                log.error( e );
             }
             finally
             {
@@ -282,7 +259,7 @@ final class DocsAssembler
                 }
                 catch ( IOException e )
                 {
-                    getLog().error( e );
+                    log.error( e );
                 }
             }
         }
@@ -294,7 +271,7 @@ final class DocsAssembler
         List<File> directories = new ArrayList<File>();
         if ( sourceDirectories == null )
         {
-            getLog().info( "No directories configured, using defaults." );
+            log.info( "No directories configured, using defaults." );
             // add default directories
             // ./src/docs and ./target/docs
             addDirectory( new File( new File( project.getBasedir(), "src" ),
@@ -317,12 +294,12 @@ final class DocsAssembler
     {
         if ( !dir.exists() )
         {
-            getLog().info( "Skipping, does not exist: " + dir );
+            log.info( "Skipping, does not exist: " + dir );
             return;
         }
         if ( dir.listFiles().length == 0 )
         {
-            getLog().info( "Skipping, is empty: " + dir );
+            log.info( "Skipping, is empty: " + dir );
             return;
         }
         if ( !dir.isDirectory() )

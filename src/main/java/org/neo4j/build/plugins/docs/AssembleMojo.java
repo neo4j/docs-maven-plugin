@@ -47,8 +47,8 @@ public class AssembleMojo extends AbstractDocsMojo
         }
         else
         {
-            DocsAssembler.assemble( sourceDirectories, filter, getLog(),
-                    session, project, projectHelper, resourceFiltering );
+            new DocsAssembler( sourceDirectories, filter, getLog(),
+                    session, project, projectHelper, resourceFiltering ).doAssembly();
         }
     }
 
