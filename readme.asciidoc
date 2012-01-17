@@ -1,0 +1,60 @@
+Maven plugin to package docs
+============================
+
+= Add it to the project ==
+
+--
+<plugin>
+  <artifactId>docs-maven-plugin</artifactId>
+  <groupId>org.neo4j.build.plugins</groupId>
+  <version>1</version>
+  <!--  the directories below will be added by default,
+    using the config element will _replace_ the defaults.
+  <configuration>
+    <sourceDirectories>
+      <sourceDirectory>${basedir}/src/docs</sourceDirectory>
+      <sourceDirectory>${project.build.directory}/docs</sourceDirectory>
+    </sourceDirectories>
+  </configuration>
+   -->
+</plugin>
+--
+
+TIP: Make sure to add the configuration to the plugin element and not to an execution, unless you want Maven builds and CLI invocations of the plugin to behave differently!
+
+= Filtering =
+
+The filtering is the usual Maven filtering being applied.
+Image files are not filtered.
+
+To turn filtering on, set the +filter+ property to +true+.
+Note that this can't be set on directory level.
+
+
+= Use it from the command line =
+
+NOTE: If it's not added to the project configuration, you need to invoke it like for example `mvn org.neo4j.build.plugins:docs-maven-plugin:1:assemble`
+
+== Build docs without building the project ==
+
+`mvn docs:assemble`
+
+* creates the docs.jar
+* attaches the created jar to the project
+* mostly interesting for use in the pom.xml
+* mvn2 and mvn3
+
+== Build and install docs without building the project ==
+
+`mvn docs:install`
+
+* creates and then installs the docs.jar
+* mvn3 only
+* CLI only
+
+`mvn docs:install -Dtest=DocsTest`
+
+* executes test, then assembles and installs docs
+* otherwise, like the example above
+
+
