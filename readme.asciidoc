@@ -1,9 +1,8 @@
-Maven plugin to package docs
-============================
+= Maven plugin to package docs =
 
-= Add it to the project ==
+== Add it to the project ==
 
---
+----
 <plugin>
   <artifactId>docs-maven-plugin</artifactId>
   <groupId>org.neo4j.build.plugins</groupId>
@@ -18,11 +17,11 @@ Maven plugin to package docs
   </configuration>
    -->
 </plugin>
---
+----
 
 TIP: Make sure to add the configuration to the plugin element and not to an execution, unless you want Maven builds and CLI invocations of the plugin to behave differently!
 
-= Filtering =
+=== Filtering ===
 
 The filtering is the usual Maven filtering being applied.
 Image files are not filtered.
@@ -31,11 +30,11 @@ To turn filtering on, set the +filter+ property to +true+.
 Note that this can't be set on directory level.
 
 
-= Use it from the command line =
+== Use it from the command line ==
 
 NOTE: If it's not added to the project configuration, you need to invoke it like for example `mvn org.neo4j.build.plugins:docs-maven-plugin:1:assemble`
 
-== Build docs without building the project ==
+=== Build docs without building the project ===
 
 `mvn docs:assemble`
 
@@ -44,7 +43,7 @@ NOTE: If it's not added to the project configuration, you need to invoke it like
 * mostly interesting for use in the pom.xml
 * mvn2 and mvn3
 
-== Build and install docs without building the project ==
+=== Build and install docs without building the project ===
 
 `mvn docs:install`
 
