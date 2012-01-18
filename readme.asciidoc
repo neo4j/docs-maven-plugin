@@ -2,6 +2,7 @@
 
 == Add it to the project ==
 
+[source,xml]
 ----
 <plugin>
   <artifactId>docs-maven-plugin</artifactId>
