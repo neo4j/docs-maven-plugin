@@ -27,7 +27,7 @@ import org.apache.maven.plugin.MojoExecutionException;
  * 
  * @goal assemble
  * @phase package
- * @threadsafe
+ * @threadSafe true
  */
 public class AssembleMojo extends AbstractDocsMojo
 {
