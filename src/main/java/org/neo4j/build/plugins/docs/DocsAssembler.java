@@ -20,18 +20,12 @@
 package org.neo4j.build.plugins.docs;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.util.zip.ZipOutputStream;
 
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Resource;
@@ -42,6 +36,10 @@ import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.shared.filtering.MavenFilteringException;
 import org.apache.maven.shared.filtering.MavenResourcesExecution;
 import org.apache.maven.shared.filtering.MavenResourcesFiltering;
+import org.codehaus.plexus.archiver.Archiver;
+import org.codehaus.plexus.archiver.ArchiverException;
+import org.codehaus.plexus.archiver.jar.JarArchiver;
+import org.codehaus.plexus.archiver.util.DefaultFileSet;
 import org.codehaus.plexus.util.FileUtils;
 
 final class DocsAssembler
@@ -50,7 +48,6 @@ final class DocsAssembler
 
     static final String TYPE = "jar";
 
-    private static final int BUFFER_SIZE = 4096;
     private static final String DOCS_DIRNAME = "docs";
     private static final List<String> NON_FILTERED_FILE_EXTENSIONS;
 
@@ -102,7 +99,16 @@ final class DocsAssembler
         {
             File target = new File( new File( project.getBuild()
                     .getDirectory() ), "filtered-docs" );
-            deleteRecursively( target );
+            try
+            {
+                FileUtils.cleanDirectory( target );
+            }
+            catch ( IOException e )
+            {
+                log.error( e );
+                throw new MojoExecutionException(
+                        "Could not remove old filtered files.", e );
+            }
             filterResources( dirs, target );
             destinationFile = createArchive( Collections.singletonList( target ) );
         }
@@ -139,49 +145,28 @@ final class DocsAssembler
                                               + destFile.getAbsolutePath() );
         }
 
-        FileOutputStream fileOut;
-        ZipOutputStream zipOut = null;
+        Archiver archiver = new JarArchiver();
+        archiver.setDestFile( destFile );
+
         try
         {
-            fileOut = new FileOutputStream( destFile );
-            zipOut = new ZipOutputStream( fileOut );
-
             for ( File dir : directories )
             {
-                int currentBaseDirPathLength = dir.getAbsolutePath()
-                        .length();
-                log.info( "Adding source directory: " + dir );
-                zipDirectory( dir, currentBaseDirPathLength, zipOut );
+                DefaultFileSet fileSet = new DefaultFileSet();
+                fileSet.setDirectory( dir );
+                archiver.addFileSet( fileSet );
             }
+            archiver.createArchive();
         }
-        catch ( FileNotFoundException e )
+        catch ( ArchiverException e )
         {
             log.error( e );
+            throw new MojoExecutionException( "Error building archive.", e );
         }
-        finally
+        catch ( IOException e )
         {
-            if ( zipOut != null )
-            {
-                try
-                {
-                    zipOut.close();
-                }
-                catch ( ZipException e )
-                {
-                    if ( "ZIP file must have at least one entry".equals( e.getMessage() ) )
-                    {
-                        log.warn( "There were no docs to assemble." );
-                    }
-                    else
-                    {
-                        log.error( e );
-                    }
-                }
-                catch ( IOException e )
-                {
-                    log.error( e );
-                }
-            }
+            log.error( e );
+            throw new MojoExecutionException( "Error building archive.", e );
         }
         return destFile;
     }
@@ -222,53 +207,6 @@ final class DocsAssembler
         catch ( MavenFilteringException e )
         {
             log.error( e );
-        }
-    }
-
-    private void zipDirectory( final File dir, int currentBaseDirPathLength, ZipOutputStream zipOut ) throws MojoExecutionException
-    {
-        byte[] buf = new byte[BUFFER_SIZE];
-
-        for ( File file : dir.listFiles() )
-        {
-            if ( file.isDirectory() )
-            {
-                zipDirectory( file, currentBaseDirPathLength, zipOut );
-                continue;
-            }
-            FileInputStream inFile = null;
-            try
-            {
-                log.debug( "Adding: " + file.getAbsolutePath() );
-                inFile = new FileInputStream( file.getAbsolutePath() );
-                zipOut.putNextEntry( new ZipEntry( file.getAbsolutePath()
-                        .substring( currentBaseDirPathLength ) ) );
-                int len;
-                while ( ( len = inFile.read( buf ) ) > 0 )
-                {
-                    zipOut.write( buf, 0, len );
-                }
-            }
-            catch ( FileNotFoundException e )
-            {
-                log.error( e );
-            }
-            catch ( IOException e )
-            {
-                log.error( e );
-            }
-            finally
-            {
-                try
-                {
-                    zipOut.closeEntry();
-                    inFile.close();
-                }
-                catch ( IOException e )
-                {
-                    log.error( e );
-                }
-            }
         }
     }
 
@@ -320,26 +258,5 @@ final class DocsAssembler
                                               + dir.getAbsolutePath() );
         }
         directories.add( dir );
-    }
-
-    private static void deleteRecursively( File file )
-    {
-        if ( !file.exists() )
-        {
-            return;
-        }
-
-        if ( file.isDirectory() )
-        {
-            for ( File child : file.listFiles() )
-            {
-                deleteRecursively( child );
-            }
-        }
-        if ( !file.delete() )
-        {
-            throw new RuntimeException(
-                    "Couldn't delete directory. Offending file:" + file );
-        }
     }
 }
