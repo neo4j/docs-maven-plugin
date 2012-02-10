@@ -9,7 +9,7 @@
   <artifactId>docs-maven-plugin</artifactId>
   <groupId>org.neo4j.build.plugins</groupId>
   <packaging>maven-plugin</packaging>
-  <version>3-SNAPSHOT</version>
+  <version>3</version>
   <name>Neo4j documentation assembler</name>
   <description>Tool to filter and package documentation files, 
     including executing a documentation-generating test
