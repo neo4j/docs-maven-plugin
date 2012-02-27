@@ -66,8 +66,8 @@ final class DocsAssembler
         // as defined in
         // org.apache.maven.shared.filtering.DefaultMavenResourcesFiltering
 
-        NON_FILTERED_FILE_EXTENSIONS = Arrays.asList( "tiff",
-                "tif", "pdf", "zip", "gz" );
+        NON_FILTERED_FILE_EXTENSIONS = Arrays.asList( "tiff", "tif", "pdf",
+                "zip", "gz" );
     }
 
     public DocsAssembler( final List<String> sourceDirectories,
@@ -86,7 +86,7 @@ final class DocsAssembler
 
     public File doAssembly() throws MojoExecutionException
     {
-        log.info( "Filtering is: " + (filter ? "on" : "off") );
+        log.info( "Filtering is: " + ( filter ? "on" : "off" ) );
         List<File> dirs = getDirectories( sourceDirectories );
         if ( dirs.size() == 0 )
         {
@@ -99,15 +99,18 @@ final class DocsAssembler
         {
             File target = new File( new File( project.getBuild()
                     .getDirectory() ), "filtered-docs" );
-            try
+            if ( target.exists() )
             {
-                FileUtils.cleanDirectory( target );
-            }
-            catch ( IOException e )
-            {
-                log.error( e );
-                throw new MojoExecutionException(
-                        "Could not remove old filtered files.", e );
+                try
+                {
+                    FileUtils.cleanDirectory( target );
+                }
+                catch ( IOException e )
+                {
+                    log.error( e );
+                    throw new MojoExecutionException(
+                            "Could not remove old filtered files.", e );
+                }
             }
             filterResources( dirs, target );
             destinationFile = createArchive( Collections.singletonList( target ) );
@@ -117,7 +120,8 @@ final class DocsAssembler
             destinationFile = createArchive( dirs );
         }
 
-        projectHelper.attachArtifact( project, TYPE, CLASSIFIER, destinationFile );
+        projectHelper.attachArtifact( project, TYPE, CLASSIFIER,
+                destinationFile );
 
         return destinationFile;
     }
