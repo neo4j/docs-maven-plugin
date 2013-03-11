@@ -26,7 +26,7 @@ import org.apache.maven.plugin.MojoExecutionException;
  * Goal which assembles docs.
  * 
  * @goal assemble
- * @phase package
+ * @phase verify
  * @threadSafe true
  */
 public class AssembleMojo extends AbstractDocsMojo
